@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'turtle_spawn = assignment1py_rt.turtle_spawn:main',
         ],
     },
 )
