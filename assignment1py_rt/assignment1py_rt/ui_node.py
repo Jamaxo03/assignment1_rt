@@ -60,7 +60,7 @@ class UINode(Node):
 
             try:
                 lin = float(input("Linear velocity (x): "))
-                ang = float(input("Angolar Velocity (z): "))
+                ang = float(input("Angular Velocity (z): "))
             except:
                 print("Invalid input")
                 continue
