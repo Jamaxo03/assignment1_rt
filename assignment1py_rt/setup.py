@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'turtle_spawn = assignment1py_rt.turtle_spawn:main',
             'ui_node = assignment1py_rt.ui_node:main',
+            'distance_node = assignment1py_rt.distance_node:main',
         ],
     },
 )
