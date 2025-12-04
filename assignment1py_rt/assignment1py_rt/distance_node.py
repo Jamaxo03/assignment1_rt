@@ -5,6 +5,7 @@ from turtlesim.msg import Pose
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Twist
 import math
+import time
 
 class DistanceNode(Node):
     def __init__(self):
@@ -23,6 +24,12 @@ class DistanceNode(Node):
         self.stop_t1 = self.create_publisher(Twist, '/turtle1/cmd_vel', 10)
         self.stop_t2 = self.create_publisher(Twist, '/turtle2/cmd_vel', 10)
 
+        # sub for last vel
+        self.last_vel_t1 = Twist()
+        self.last_vel_t2 = Twist()
+        self.sub_vel_t1 = self.create_subscription(Twist, '/turtle1/cmd_vel', self.vel_t1_callback, 10)
+        self.sub_vel_t2 = self.create_subscription(Twist, '/turtle2/cmd_vel', self.vel_t2_callback, 10)
+
         # threshold distance
         self.min_distance = 1
 
@@ -35,6 +42,12 @@ class DistanceNode(Node):
     def turtle2_callback(self, msg):
         self.t2_pose = msg
         self.process_distances()
+
+    def vel_t1_callback(self, msg):
+        self.last_vel_t1 = msg
+
+    def vel_t2_callback(self, msg):
+        self.last_vel_t2 = msg
 
     def process_distances(self):
         
@@ -62,27 +75,43 @@ class DistanceNode(Node):
             stop = Twist()
 
             if moving_t1:
-                self.stop_t1.publish(stop)
-                self.get_logger().warn(f"Turtle1 stop")
+                self.go_backwards(1)
             if moving_t2:
-                self.stop_t2.publish(stop)
-                self.get_logger().warn(f"Turtle2 stop")
+                self.go_backwards(2)
 
         # check distance from walls
         if moving_t1 and self.is_near_wall(self.t1_pose):
 
             self.get_logger().warn("Turtle1 too close to a wall")
-            self.stop_t1.publish(Twist())
+            self.go_backwards(1)
 
         if moving_t2 and self.is_near_wall(self.t2_pose):
 
             self.get_logger().warn("Turtle2 too close to a wall")
-            self.stop_t2.publish(Twist())
+            self.go_backwards(2)
 
     def is_near_wall(self, pose):
 
         return (pose.x < 1 or pose.x > 10 or pose.y < 1 or pose.y > 10)
     
+    def go_backwards(self, turtle_id):
+        reverse = Twist()
+
+        if turtle_id == 1:
+            reverse.linear.x  = -self.last_vel_t1.linear.x
+            reverse.angular.z = -self.last_vel_t1.angular.z
+            pub = self.stop_t1
+        else:
+            reverse.linear.x  = -self.last_vel_t2.linear.x
+            reverse.angular.z = -self.last_vel_t2.angular.z
+            pub = self.stop_t2
+
+        # go backwards for 0.5 seconds
+        pub.publish(reverse)
+
+        time.sleep(0.5)
+
+        pub.publish(Twist())
 
 def main(args=None):
     rclpy.init(args=args)
